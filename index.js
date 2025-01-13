@@ -1,17 +1,8 @@
-const {
-    Client,
-    GatewayIntentBits,
-    Partials
-} = require('discord.js');
-const {
-    promises: fs,
-    createWriteStream
-} = require('fs');
+const { Client, GatewayIntentBits, Partials } = require('discord.js');
+const { promises: fs, createWriteStream } = require('fs');
 const fetch = require('node-fetch');
 const path = require('path');
-const {
-    format
-} = require('date-fns');
+const { format } = require('date-fns');
 require('dotenv').config();
 
 const client = new Client({
@@ -22,13 +13,14 @@ const client = new Client({
 client.once('ready', async () => {
     console.log(`Logged in as ${client.user.username}`);
 
-    const totalMessages = 200; // can range from 10 - 1000
+    const totalMessages = 1000; // can range from 10 - 1000
     const channelId = process.env.channelId;
     const logDir = 'logs';
     const filesDir = path.join(logDir, 'files');
 
     try {
-        await createDirectories([logDir, filesDir]);
+        await fs.mkdir(logDir, { recursive: true });
+        await fs.mkdir(filesDir, { recursive: true });
 
         const channel = await fetchChannel(channelId);
         const messages = await fetchMessages(channel, totalMessages);
@@ -42,15 +34,6 @@ client.once('ready', async () => {
         client.destroy();
     }
 });
-
-/**
- * Create directories if they don't exist
- */
-async function createDirectories(directories) {
-    return Promise.all(directories.map(dir => fs.mkdir(dir, {
-        recursive: true
-    })));
-}
 
 /**
  * Fetch a specific channel by ID and validate it
@@ -92,7 +75,7 @@ async function formatMessages(messages, filesDir) {
     const formatDate = date => format(date, 'MMMM dd, yyyy hh:mm:ss a');
 
     return (await Promise.all(messages.map(async (msg) => {
-        let messageLog = `${msg.content}\n---- Sent By: ${msg.author.tag}\n--------- At: ${formatDate(msg.createdAt)}${msg.editedAt ? `\n-- Edited At: ${formatDate(msg.editedAt)}` : ''}`;
+        let messageLog = `${msg.content}\n---- Sent By: ${msg.author.username}\n--------- At: ${formatDate(msg.createdAt)}${msg.editedAt ? `\n-- Edited At: ${formatDate(msg.editedAt)}` : ''}`;
 
         if (msg.attachments.size > 0) {
             messageLog += `\nAttachments:\n${await saveAttachments(msg.attachments, filesDir)}`;
